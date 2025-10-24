@@ -1,0 +1,27 @@
+import { NextResponse } from "next/server";
+import { dbConnect } from "@/lib/mongodb";
+import User from "@/models/User";
+
+export async function POST(req: Request) {
+  await dbConnect();
+  const { email, amount } = await req.json();
+
+  const user = await User.findOne({ email });
+  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+  user.balance += Number(amount);
+  await user.save();
+
+  return NextResponse.json({ message: "Funds added", balance: user.balance });
+}
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const email = searchParams.get("email");
+
+  await dbConnect();
+  const user = await User.findOne({ email });
+  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+  return NextResponse.json({ balance: user.balance });
+}
